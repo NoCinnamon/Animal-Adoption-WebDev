@@ -5,10 +5,12 @@ import json
 import os
 import re
 import bcrypt
+import secrets
 from database import AnimalDatabase, UserDatabase
 
 db = AnimalDatabase()
 user_db = UserDatabase()
+sessions = {}
 
 COLUMNS = ("id", "name", "species", "breed", "gender", "age", "description", "status", "image")
 USER_COLUMNS = ("id", "first_name", "last_name", "email", "password_hash", "role")
@@ -20,6 +22,40 @@ def user_to_obj(row):
     user = dict(zip(USER_COLUMNS, row))
     del user["password_hash"]
     return user
+
+def current_user(handler):
+    cookie = handler.headers.get("Cookie")
+    if not cookie:
+        return None
+    session_id = None
+    for part in cookie.split(";"):
+        name, _, value = part.strip().partition("=")
+        if name == "session_id":
+            session_id = value
+    if session_id is None:
+        return None
+    return sessions.get(session_id)
+
+def require_worker(handler):
+    user = current_user(handler)
+    if user is None:
+        body = json.dumps({"error": "Not logged in"}).encode()
+        handler.send_response(401)
+        handler.send_header("Content-Type", "application/json")
+        handler.send_header("Access-Control-Allow-Origin", "*")
+        handler.end_headers()
+        handler.wfile.write(body)
+        return False
+    if user["role"] != "worker":
+        body = json.dumps({"error": "Forbidden"}).encode()
+        handler.send_response(403)
+        handler.send_header("Content-Type", "application/json")
+        handler.send_header("Access-Control-Allow-Origin", "*")
+        handler.end_headers()
+        handler.wfile.write(body)
+        return False
+    return True
+
 
 def save_uploaded_files(content_type, raw):
     header = ("Content-Type: " + content_type + "\r\n\r\n").encode()
@@ -52,6 +88,25 @@ def save_uploaded_files(content_type, raw):
 
 class Request_Handler(BaseHTTPRequestHandler):
     def do_GET(self):                                               # list/retrive
+        if self.path == "/sessions":
+            user = current_user(self)
+            if user is None:
+                body = json.dumps({"error": "Not logged in"}).encode()
+                self.send_response(401)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+                return
+
+            body = json.dumps(user).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         parse = self.path.split("/")
 
         if parse == ["", "animals"]:
@@ -96,6 +151,8 @@ class Request_Handler(BaseHTTPRequestHandler):
     def do_POST(self):                                                     # Create
 
         if self.path == "/upload":
+            if not require_worker(self):
+                return
             length = int(self.headers["Content-Length"])
             raw = self.rfile.read(length)
             saved = save_uploaded_files(self.headers.get("Content-Type", ""), raw)
@@ -140,6 +197,35 @@ class Request_Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
             return
 
+        if self.path == "/sessions":
+            length = int(self.headers["Content-Length"])
+            raw = self.rfile.read(length)
+            data = json.loads(raw)
+
+            row = user_db.get_by_email(data["email"])
+            password_hash = row[4] if row is not None else None                                      # row[4] 是 password_hash   
+            if password_hash is None or not bcrypt.checkpw(data["password"].encode(), password_hash.encode()):
+                body = json.dumps({"error": "Invalid email or password"}).encode()
+                self.send_response(401)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+                return
+
+            user = user_to_obj(row)                                            # ！！！
+            session_id = secrets.token_hex(16)
+            sessions[session_id] = user
+
+            body = json.dumps(user).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Set-Cookie", "session_id=" + session_id + "; HttpOnly; Path=/")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         if self.path != "/animals":
             body = json.dumps({"Error 404: not fund"}).encode()
             self.send_response(404)
@@ -147,6 +233,9 @@ class Request_Handler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(body)
+            return
+
+        if not require_worker(self):
             return
         
         length = int(self.headers["Content-Length"])
@@ -182,6 +271,9 @@ class Request_Handler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(body)
+            return
+
+        if not require_worker(self):
             return
 
         animal_id = int(parse[2])
@@ -227,6 +319,9 @@ class Request_Handler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(body)
+            return
+
+        if not require_worker(self):
             return
 
         animal_id = int(parse[2])        
