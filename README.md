@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS animals (
 
 * everything other than description is required to have
 
+
+## START THE SERVER:
+python3 server.py
+
+
 ## REST
 
 ```

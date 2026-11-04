@@ -4,14 +4,22 @@ from email.policy import default
 import json
 import os
 import re
-from database import AnimalDatabase
+import bcrypt
+from database import AnimalDatabase, UserDatabase
 
 db = AnimalDatabase()
+user_db = UserDatabase()
 
 COLUMNS = ("id", "name", "species", "breed", "gender", "age", "description", "status", "image")
+USER_COLUMNS = ("id", "first_name", "last_name", "email", "password_hash", "role")
 
 def row_to_obj(row):
     return dict(zip(COLUMNS, row))
+
+def user_to_obj(row):
+    user = dict(zip(USER_COLUMNS, row))
+    del user["password_hash"]
+    return user
 
 def save_uploaded_files(content_type, raw):
     header = ("Content-Type: " + content_type + "\r\n\r\n").encode()
@@ -86,12 +94,46 @@ class Request_Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
         
     def do_POST(self):                                                     # Create
+
         if self.path == "/upload":
             length = int(self.headers["Content-Length"])
             raw = self.rfile.read(length)
             saved = save_uploaded_files(self.headers.get("Content-Type", ""), raw)
             body = json.dumps({"saved": saved}).encode()
             self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        if self.path == "/users":
+            length = int(self.headers["Content-Length"])
+            raw = self.rfile.read(length)
+            data = json.loads(raw)
+            
+            if user_db.get_by_email(data["email"]) is not None:
+                body = json.dumps({"Error": "Email already registered"}).encode()
+                self.send_response(409)
+                self.send_header("Content-Type", "application/json")                                       
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+                return
+
+            password_hash = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
+            user = (
+                data["first_name"],
+                data["last_name"],
+                data["email"],
+                password_hash,
+                "user",
+            )
+            user_db.create(user)
+            row = user_db.get_by_email(data["email"])
+
+            body = json.dumps(user_to_obj(row)).encode()
+            self.send_response(201)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()

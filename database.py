@@ -3,7 +3,7 @@ import csv
 
 
 class AnimalDatabase:
-    def __init__(self, db="data/animals.db"):
+    def __init__(self, db="data/adoption.db"):
         self.db = db
 
     def connect(self):
@@ -86,9 +86,60 @@ class AnimalDatabase:
         con.close()
         
 
+
+class UserDatabase:
+    def __init__(self, db="data/adoption.db"):
+        self.db = db
+
+    def connect(self):
+        con = sqlite3.connect(self.db)
+        return con
+
+    def create_table(self):
+        con = self.connect()
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT NOT NULL,
+            last_name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL
+            )
+        """)
+        con.commit()
+        con.close()
+
+    def create(self, user):
+        con = self.connect()
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)",
+            user,
+        )
+        con.commit()
+        row_id = cur.lastrowid
+        con.close()
+        return row_id
+
+    def get_by_email(self, email):
+        con = self.connect()
+        cur = con.cursor()
+        cur.execute("SELECT * FROM users WHERE email = ?", (email,))
+        row = cur.fetchone()
+        con.close()
+        return row
+
+
+
+
+
+
+
 if __name__ == "__main__":
     db = AnimalDatabase()
     db.create_table()
+    UserDatabase().create_table()
 
     con = db.connect()
     cur = con.cursor()

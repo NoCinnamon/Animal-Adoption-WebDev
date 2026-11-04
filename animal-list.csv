@@ -1,9 +1,10 @@
 name,species,breed,gender,age,description,status
 Milo,Dog,Yorkshire,Male,2,Calm around kids,Available,"images/dog-Milo.jpg"
-Nugget,Dog,mix,Male,0.6,Calm puppy,Available,"images/dog-Nugget.jpg"
+Rocky,Dog,Border Collie,Male,6,playful,Available,"images/dog-Rockey.jpg"
 Cleo,Cat,Domestic Shorthair,Female,1,,Available,"images/cat-Cleo.jpg"
 Oliver,Cat,Tabby,Male,3,Quiet and likes laps,Adopted,"images/cat-Oliver.jpg"
 Bear,Dog,Golden Retriever,Male,5,Good with other dogs,Adopted,"images/dog-Bear.jpg"
 Nala,Cat,Siamese,Female,2,Talkative and playful,Available,"images/cat-Nala.jpg"
 Rocky,Dog,Border Collie,Male,6,playful,Available,"images/dog-Rockey.jpg"
 Daisy,Dog,Poodle,Female,3,Small and easy to carry,Available,"images/rabbit-Ruby.jpg"
+Nugget,Dog,mix,Male,0.6,Calm puppy,Available,"images/dog-Nugget.jpg"
