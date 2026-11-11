@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <title>Register</title>
+</head>
+<body class="register-page">
+  <section class="register-panel">
+    <div class="register-card">
+      <a class="brand" href="index.html">
+        <span class="logo" aria-hidden="true">
+          <img src="images/adopt.png" alt="">
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">Sniff & Lets Go</span>
+        </span>
+      </a>
+
+      <div class="auth-switch" id="auth-switch">
+        <span class="auth-slider"></span>
+        <button type="button" data-mode="register">Register</button>
+        <button type="button" data-mode="login">Login</button>
+      </div>
+
+      <h1>Create an account</h1>
+      <p class="register-note">All feilds are required</p>
+
+      <form id="register-form">
+        <label>
+          First name
+          <input name="first_name" required>
+        </label>
+        <label>
+          Last name
+          <input name="last_name" required>
+        </label>
+        <label>
+          Email address
+          <input name="email" type="email" required>
+        </label>
+        <label>
+          Password
+          <input name="password" type="password" required>
+        </label>
+        <button type="submit" id="submit-button">Register</button>
+      </form>
+
+      <form id="login-form">
+        <label>
+          Email address
+          <input name="email" type="email" required>
+        </label>
+        <label>
+          Password
+          <input name="password" type="password" required>
+        </label>
+        <button type="submit">Login</button>
+      </form>
+
+      <p id="register-message"></p>
+    </div>
+    <aside class="register-art">
+      <a class="image-credit" href="https://www.magnific.com">Designed by Magnific</a>
+    </aside>
+  </section>
+
+  <script>
+    const API = location.hostname
+      ? location.protocol + "//" + location.hostname + ":8000"
+      : "http://127.0.0.1:8000";
+    const message = document.querySelector("#register-message");
+    const submitButton = document.querySelector("#submit-button");
+    const heading = document.querySelector(".register-card h1");
+    const card = document.querySelector(".register-card");
+
+    document.querySelectorAll("#auth-switch button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const isLogin = button.dataset.mode === "login";
+        document.querySelector("#auth-switch").classList.toggle("show-login", isLogin);
+        card.classList.toggle("show-login", isLogin);
+        submitButton.textContent = isLogin ? "Login" : "Register";
+        heading.textContent = isLogin ? "Log in" : "Create an account";
+        message.textContent = "";
+      });
+    });
+
+    document.querySelector("#register-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const form = event.target;
+      const user = {
+        first_name: form.first_name.value,
+        last_name: form.last_name.value,
+        email: form.email.value,
+        password: form.password.value,
+      };
+
+      fetch(API + "/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      })
+        .then((response) => {
+          if (response.status === 201) {
+            message.textContent = "Registration successful.";
+            form.reset();
+            return;
+          }
+          message.textContent = "That email is already registered.";
+        });
+    });
+
+    document.querySelector("#login-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const form = event.target;
+
+      fetch(API + "/sessions", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email.value,
+          password: form.password.value,
+        }),
+      })
+        .then((response) => {
+          if (response.status === 200) {
+            window.location.href = "index.html";
+            return;
+          }
+          message.textContent = "Invalid email or password.";
+        });
+    });
+  </script>
+</body>
+</html>

@@ -36,13 +36,55 @@ def current_user(handler):
         return None
     return sessions.get(session_id)
 
+def allow_cors(handler):
+    origin = handler.headers.get("Origin")
+    if origin:
+        handler.send_header("Access-Control-Allow-Origin", origin)
+        handler.send_header("Access-Control-Allow-Credentials", "true")
+    else:
+        handler.send_header("Access-Control-Allow-Origin", "*")
+
+def serve_static(handler):
+    rel = handler.path.split("?", 1)[0]
+    if rel == "/":
+        rel = "/index.html"
+    if not rel.startswith("/") or ".." in rel:
+        return False
+    root = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.normpath(os.path.join(root, rel.lstrip("/")))
+    if path != root and not path.startswith(root + os.sep):
+        return False
+    if not os.path.isfile(path):
+        return False
+    types = {
+        ".html": "text/html; charset=utf-8",
+        ".css": "text/css; charset=utf-8",
+        ".js": "text/javascript; charset=utf-8",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+        ".webp": "image/webp",
+    }
+    content_type = types.get(os.path.splitext(path)[1].lower())
+    if content_type is None:
+        return False
+    with open(path, "rb") as f:
+        data = f.read()
+    handler.send_response(200)
+    handler.send_header("Content-Type", content_type)
+    handler.end_headers()
+    handler.wfile.write(data)
+    return True
+
 def require_worker(handler):
     user = current_user(handler)
     if user is None:
         body = json.dumps({"error": "Not logged in"}).encode()
         handler.send_response(401)
         handler.send_header("Content-Type", "application/json")
-        handler.send_header("Access-Control-Allow-Origin", "*")
+        allow_cors(handler)
         handler.end_headers()
         handler.wfile.write(body)
         return False
@@ -50,7 +92,7 @@ def require_worker(handler):
         body = json.dumps({"error": "Forbidden"}).encode()
         handler.send_response(403)
         handler.send_header("Content-Type", "application/json")
-        handler.send_header("Access-Control-Allow-Origin", "*")
+        allow_cors(handler)
         handler.end_headers()
         handler.wfile.write(body)
         return False
@@ -94,7 +136,7 @@ class Request_Handler(BaseHTTPRequestHandler):
                 body = json.dumps({"error": "Not logged in"}).encode()
                 self.send_response(401)
                 self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
+                allow_cors(self)
                 self.end_headers()
                 self.wfile.write(body)
                 return
@@ -102,7 +144,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps(user).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
             return
@@ -116,7 +158,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps(animals).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
             return
@@ -128,7 +170,7 @@ class Request_Handler(BaseHTTPRequestHandler):
                 body = json.dumps({"error": "Not found"}).encode()
                 self.send_response(404)
                 self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
+                allow_cors(self)
                 self.end_headers()
                 self.wfile.write(body)
                 return
@@ -136,15 +178,18 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps(row_to_obj(row)).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
+            return
+
+        if serve_static(self):
             return
 
         body = json.dumps({"error": "Not found"}).encode()
         self.send_response(404)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        allow_cors(self)
         self.end_headers()
         self.wfile.write(body)
         
@@ -159,7 +204,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps({"saved": saved}).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
             return
@@ -173,7 +218,7 @@ class Request_Handler(BaseHTTPRequestHandler):
                 body = json.dumps({"Error": "Email already registered"}).encode()
                 self.send_response(409)
                 self.send_header("Content-Type", "application/json")                                       
-                self.send_header("Access-Control-Allow-Origin", "*")
+                allow_cors(self)
                 self.end_headers()
                 self.wfile.write(body)
                 return
@@ -192,7 +237,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps(user_to_obj(row)).encode()
             self.send_response(201)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
             return
@@ -208,7 +253,7 @@ class Request_Handler(BaseHTTPRequestHandler):
                 body = json.dumps({"error": "Invalid email or password"}).encode()
                 self.send_response(401)
                 self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
+                allow_cors(self)
                 self.end_headers()
                 self.wfile.write(body)
                 return
@@ -220,7 +265,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps(user).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.send_header("Set-Cookie", "session_id=" + session_id + "; HttpOnly; Path=/")
             self.end_headers()
             self.wfile.write(body)
@@ -230,7 +275,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps({"Error 404: not fund"}).encode()
             self.send_response(404)
             self.send_header("Content-Type", "application/json")                                       
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
             return
@@ -258,7 +303,7 @@ class Request_Handler(BaseHTTPRequestHandler):
         body = json.dumps(row_to_obj(row)).encode()
         self.send_response(201)
         self.send_header("Content-Type", "application/json")                                     
-        self.send_header("Access-Control-Allow-Origin", "*")
+        allow_cors(self)
         self.end_headers()
         self.wfile.write(body)
 
@@ -268,7 +313,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps({"Error 404: not fund"}).encode()
             self.send_response(404)
             self.send_header("Content-Type", "application/json")                                       
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
             return
@@ -297,7 +342,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps({"error": "Not found"}).encode()
             self.send_response(404)
             self.send_header("Content-Type", "application/json")                                     
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
             return 
@@ -306,7 +351,7 @@ class Request_Handler(BaseHTTPRequestHandler):
         body = json.dumps(row_to_obj(row)).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        allow_cors(self)
         self.end_headers()
         self.wfile.write(body)
 
@@ -316,7 +361,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps({"Error 404: not fund"}).encode()
             self.send_response(404)
             self.send_header("Content-Type", "application/json")                                       
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
             return
@@ -331,7 +376,7 @@ class Request_Handler(BaseHTTPRequestHandler):
             body = json.dumps({"error": "Not found"}).encode()
             self.send_response(404)
             self.send_header("Content-Type", "application/json")                                     
-            self.send_header("Access-Control-Allow-Origin", "*")
+            allow_cors(self)
             self.end_headers()
             self.wfile.write(body)
             return 
@@ -339,13 +384,13 @@ class Request_Handler(BaseHTTPRequestHandler):
         body = json.dumps({"deleted": animal_id}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        allow_cors(self)
         self.end_headers()
         self.wfile.write(body)
 
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        allow_cors(self)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()

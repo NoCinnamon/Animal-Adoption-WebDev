@@ -1,4 +1,6 @@
-const API = "http://localhost:8000";
+const API = location.hostname
+  ? location.protocol + "//" + location.hostname + ":8000"
+  : "http://127.0.0.1:8000";
 
 function addAnimal(list, animal) {
   const item = document.createElement("li");
@@ -32,16 +34,34 @@ function addAnimal(list, animal) {
   edit.className = "edit-button";
   edit.textContent = "Edit";
   edit.href = "#animal-form";
-  edit.addEventListener("click", () => {
-    editingId = animal.id;
-    editingImage = animal.image || "";
-    document.querySelector("#animal-form [name=name]").value = animal.name;
-    document.querySelector("#animal-form [name=species]").value = animal.species;
-    document.querySelector("#animal-form [name=breed]").value = animal.breed;
-    document.querySelector("#animal-form [name=gender]").value = animal.gender;
-    document.querySelector("#animal-form [name=age]").value = animal.age;
-    document.querySelector("#animal-form [name=description]").value = animal.description;
-    document.querySelector("#animal-form [name=status]").value = animal.status;
+  edit.addEventListener("click", (event) => {
+    event.preventDefault();
+    fetch(API + "/sessions", { credentials: "include" })
+      .then((response) => {
+        if (response.status !== 200) {
+          return null;
+        }
+        return response.json();
+      })
+      .then((user) => {
+        if (!user || user.role !== "worker") {
+          alert("You do not have permission to edit this animal.");
+          return;
+        }
+        editingId = animal.id;
+        editingImage = animal.image || "";
+        document.querySelector("#animal-form [name=name]").value = animal.name;
+        document.querySelector("#animal-form [name=species]").value = animal.species;
+        document.querySelector("#animal-form [name=breed]").value = animal.breed;
+        document.querySelector("#animal-form [name=gender]").value = animal.gender;
+        document.querySelector("#animal-form [name=age]").value = animal.age;
+        document.querySelector("#animal-form [name=description]").value = animal.description;
+        document.querySelector("#animal-form [name=status]").value = animal.status;
+        document.querySelector("#animal-form").scrollIntoView();
+      })
+      .catch(() => {
+        alert("You do not have permission to edit this animal.");
+      });
   });
   
 
@@ -51,10 +71,16 @@ function addAnimal(list, animal) {
   remove.addEventListener("click", () => {
     const yes = confirm("Delete " + animal.name + "?");
     if (yes) {
-      fetch(API + "/animals/" + animal.id, { method: "DELETE" })
-        .then(() => item.remove());
+      fetch(API + "/animals/" + animal.id, { method: "DELETE", credentials: "include" })
+        .then((response) => {
+          if (response.status === 200) {
+            item.remove();
+            return;
+          }
+          alert("You do not have permission to delete this animal.");
+        });
     }
-  })
+  });
 
   info.append(name, meta, status);                
   if (animal.description) {
@@ -144,24 +170,42 @@ function addNewAnimal(e) {
 
     fetch(url, {
       method: method,
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(animal),
     })
-      .then((response) => response.json())
-      .then(() => {
-      editingId = null;
-      editingImage = "";
-      queuedImagesArray = [];
-      displayQueuedImages();
-      document.querySelector("#animal-form").reset();
-      return fetch(API + "/animals");
-    })
-    .then((response) => response.json())
-    .then((animals) => {
-      const list = document.querySelector("#animal-list");
-      list.replaceChildren();
-      animals.forEach((animal) => addAnimal(list, animal));
-    });
+      .then((response) => {
+        if (method === "PUT" && response.status !== 200) {
+          alert("You do not have permission to edit this animal.");
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!data) {
+          return null;
+        }
+        editingId = null;
+        editingImage = "";
+        queuedImagesArray = [];
+        displayQueuedImages();
+        document.querySelector("#animal-form").reset();
+        return fetch(API + "/animals");
+      })
+      .then((response) => {
+        if (!response) {
+          return null;
+        }
+        return response.json();
+      })
+      .then((animals) => {
+        if (!animals) {
+          return;
+        }
+        const list = document.querySelector("#animal-list");
+        list.replaceChildren();
+        animals.forEach((animal) => addAnimal(list, animal));
+      });
   };
 
   if (queuedImagesArray.length === 0) {
@@ -176,6 +220,7 @@ function addNewAnimal(e) {
 
   fetch(API + "/upload", {
     method: "POST",
+    credentials: "include",
     body: formData,
   })
     .then((response) => response.json())

@@ -1,5 +1,6 @@
 import sqlite3
 import csv
+import bcrypt
 
 
 class AnimalDatabase:
@@ -85,7 +86,7 @@ class AnimalDatabase:
         con.commit()
         con.close()
         
-
+#------------------------------ UserDatabase ----------------------------------------------------------------
 
 class UserDatabase:
     def __init__(self, db="data/adoption.db"):
@@ -121,6 +122,14 @@ class UserDatabase:
         row_id = cur.lastrowid
         con.close()
         return row_id
+
+    def list_users(self):
+        con = self.connect()
+        cur = con.cursor()
+        cur.execute("SELECT * FROM users") 
+        list = cur.fetchall()
+        con.close()
+        return list
 
     def get_by_email(self, email):
         con = self.connect()
@@ -167,11 +176,37 @@ if __name__ == "__main__":
     
     con.commit()
     con.close()
+
+    con = db.connect()
+    cur = con.cursor()
+    cur.execute("SELECT COUNT(*) FROM users")
+    count = cur.fetchone()[0]
+    if count == 0:
+        with open("user-list.csv", "r") as file:
+            reader = csv.reader(file)
+            next(reader)
+            data = []
+            for first_name, last_name, email, password, role in reader:
+                password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                data.append(
+                    (None, 
+                    first_name, 
+                    last_name, 
+                    email, 
+                    password_hash, 
+                    role)
+                )  
+            cur.executemany("INSERT INTO users VALUES(?, ?, ?, ?, ?, ?)", data)
+    con.commit()
+    con.close()
     # db.get(1)
     # db.create(("Smokey", "Dog", "Border Collie", "Male", 2, "cutest forevery", "Available"))
     # db.delete(1)
     # db.replace(10, ("Rockey", "Dog", "Border Collie", "Male", 2, "Funny dog", "Available", "images/dog-Rockey"))
     for animal in db.list_all():
         print(animal)
+    print("\n")
+    for user in UserDatabase().list_users():
+        print(user)
 
     

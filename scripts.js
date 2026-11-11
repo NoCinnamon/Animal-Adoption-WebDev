@@ -1,10 +1,12 @@
-const API = "http://localhost:8000";
+const API = location.hostname
+  ? location.protocol + "//" + location.hostname + ":8000"
+  : "http://127.0.0.1:8000";
 
 function addPreview(list, animal) {
   const item = document.createElement("li");
 
   const link = document.createElement("a");
-  link.href = "animal.html?id=" + animal.id;
+  link.href = "animals.html";
 
   if (animal.image) {
     const image = document.createElement("img");

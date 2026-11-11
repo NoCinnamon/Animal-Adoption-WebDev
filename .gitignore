@@ -1,2 +1,4 @@
 NOTES.md
 .venv
+__pycache__/
+user-list.csv 
