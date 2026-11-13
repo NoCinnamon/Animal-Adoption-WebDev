@@ -140,6 +140,77 @@ class UserDatabase:
         return row
 
 
+#------------------------------ ApplicationDatabase -----------------------------------------------
+
+
+class ApplicationDatabase:
+    def __init__(self, db="data/adoption.db"):
+        self.db = db
+
+    def connect(self):
+        con = sqlite3.connect(self.db)
+        return con
+    
+    def create_table(self):
+        con = self.connect()
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL DEFAULT CURRENT_DATE,
+            user_id INTEGER NOT NULL,
+            phone TEXT NOT NULL,
+            animal_id INTEGER NOT NULL,
+            message TEXT NOT NULL
+            )
+        """)
+        con.commit()
+        con.close()
+    
+    def create(self, application):
+        con = self.connect()
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO applications (user_id, animal_id, phone, message) VALUES (?, ?, ?, ?)",
+            application,
+        )
+        con.commit()
+        row_id = cur.lastrowid
+        con.close()
+        return row_id
+
+    def list_applications(self):
+        con = self.connect()
+        cur = con.cursor()
+        cur.execute("SELECT * FROM applications")
+        rows = cur.fetchall()
+        con.close()
+        return rows
+
+    def list_by_user(self, user_id):
+        con = self.connect()
+        cur = con.cursor()
+        cur.execute("SELECT * FROM applications WHERE user_id = ?", (user_id,))
+        rows = cur.fetchall()
+        con.close()
+        return rows
+
+    def get_Application(self, application_id):
+        con = self.connect()
+        cur = con.cursor()
+        cur.execute("SELECT * FROM applications WHERE id = ?", (application_id,))
+        row = cur.fetchone()
+        con.close()
+        return row
+
+    def delete_Application(self, application_id):
+        con = self.connect()
+        cur = con.cursor()
+        cur.execute("DELETE FROM applications WHERE id = ?", (application_id,))
+        con.commit()
+        row_count = cur.rowcount
+        con.close()
+        return row_count
+
 
 
 
@@ -149,6 +220,7 @@ if __name__ == "__main__":
     db = AnimalDatabase()
     db.create_table()
     UserDatabase().create_table()
+    ApplicationDatabase().create_table()
 
     con = db.connect()
     cur = con.cursor()
@@ -199,14 +271,43 @@ if __name__ == "__main__":
             cur.executemany("INSERT INTO users VALUES(?, ?, ?, ?, ?, ?)", data)
     con.commit()
     con.close()
+
+    con = db.connect()
+    cur = con.cursor()
+    cur.execute("SELECT COUNT(*) FROM applications")
+    count = cur.fetchone()[0]
+    if count == 0:
+        with open("application-list.csv", "r") as file:
+            reader = csv.reader(file)
+            next(reader)
+            data = []
+            for date, user_id, phone, animal_id, message in reader:
+                data.append(
+                    (date,
+                    int(user_id),
+                    phone,
+                    int(animal_id),
+                    message)
+                )
+            cur.executemany(
+                "INSERT INTO applications (date, user_id, phone, animal_id, message) VALUES (?, ?, ?, ?, ?)",
+                data,
+            )
+    con.commit()
+    con.close()
+
     # db.get(1)
     # db.create(("Smokey", "Dog", "Border Collie", "Male", 2, "cutest forevery", "Available"))
     # db.delete(1)
     # db.replace(10, ("Rockey", "Dog", "Border Collie", "Male", 2, "Funny dog", "Available", "images/dog-Rockey"))
+    
     for animal in db.list_all():
         print(animal)
     print("\n")
     for user in UserDatabase().list_users():
         print(user)
+    print("\n")
+    for application in ApplicationDatabase().list_applications():
+        print(application) 
 
     

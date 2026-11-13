@@ -6,11 +6,12 @@ import os
 import re
 import bcrypt
 import secrets
-from database import AnimalDatabase, UserDatabase
+from database import AnimalDatabase, UserDatabase, ApplicationDatabse
 
 db = AnimalDatabase()
 user_db = UserDatabase()
 sessions = {}
+application_db = ApplicationDatabse()
 
 COLUMNS = ("id", "name", "species", "breed", "gender", "age", "description", "status", "image")
 USER_COLUMNS = ("id", "first_name", "last_name", "email", "password_hash", "role")
@@ -78,6 +79,18 @@ def serve_static(handler):
     handler.wfile.write(data)
     return True
 
+def require_login(handler):
+    user = current_user(handler)
+    if user is None:
+        body = json.dumps({"error": "Got to log in first Baby!"}).encode()
+        handler.send_response(401)
+        handler.send_header("Content-Type", "application/json")
+        allow_cors(handler)
+        handler.end_headers()
+        handler.wfile.write(body)
+        return False
+    return True
+
 def require_worker(handler):
     user = current_user(handler)
     if user is None:
@@ -130,6 +143,11 @@ def save_uploaded_files(content_type, raw):
 
 class Request_Handler(BaseHTTPRequestHandler):
     def do_GET(self):                                               # list/retrive
+        # if parse == ["", "animals"]:
+        #     if not require_login(self):
+        #         return
+        #     animals = []
+
         if self.path == "/sessions":
             user = current_user(self)
             if user is None:
@@ -356,6 +374,24 @@ class Request_Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_DELETE(self):
+        if self.path == "/sessions":
+            cookie = self.headers.get("Cookie") or ""
+            session_id = None
+            for part in cookie.split(";"):
+                name, _, value = part.strip().partition("=")
+                if name == "session_id":
+                    session_id = value
+            if session_id is not None:
+                sessions.pop(session_id, None)
+            body = json.dumps({"ok": True}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            allow_cors(self)
+            self.send_header("Set-Cookie", "session_id=; HttpOnly; Path=/; Max-Age=0")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         parse = self.path.split("/")                                       # after parsing: [ "", "animals",3(id)]
         if len(parse) != 3 or parse[1] != "animals":
             body = json.dumps({"Error 404: not fund"}).encode()

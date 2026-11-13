@@ -97,12 +97,22 @@ function addAnimal(list, animal) {
 
 }
 
-fetch(API + "/animals")
-  .then((response) => response.json())
+fetch(API + "/sessions", { credentials: "include" })
+  .then((response) => {
+    if (response.status !== 200) {
+      alert("Got to log in first Baby.");
+      window.location.href = "index.html";
+      return null;
+    }
+    return fetch(API + "/animals").then((response) => response.json());
+  })
   .then((animals) => {
+    if (!animals) {
+      return;
+    }
     const list = document.querySelector("#animal-list");
     animals.forEach((animal) => addAnimal(list, animal));
-  }); 
+  });
 
 
   let queuedImagesArray = [],

@@ -28,10 +28,10 @@
         <!-- <li><a href="#team">Team</a></li>
         <li><a href="#stories">Testimonials</a></li> -->
         <li><a href="#contact">Contact us</a></li>
-        <li><a href="register.html">Login</a></li>
       </ul>
     </nav>
 
+    <div class="header-tools">
     <ul class="social">
       <li>
         <a href="https://facebook.com" aria-label="Facebook">
@@ -59,10 +59,12 @@
         </a>
       </li>
     </ul>
+    </div>
   </header>
 
   <section class="intro">
     <img class="background-Image" src="images/border-collie-yellow.jpg" alt="Border collie on a yellow background">
+    <div id="login-status"><a href="register.html">Login</a></div>
     <div class="intro-text">
       <p class="intro-kicker">- LOVE AWAITS HERE -</p>
       <h1>Your Kindness,<br>Save Lifes!</h1>
@@ -81,7 +83,7 @@
     <p class="member-subtitle"> See our current members</p>
 
     <ul id="animal-preview"></ul>
-    <a class="show-all" href="animals.html">View all</a>
+    <a class="show-all" id="view-all-restriction" href="animals.html">View all</a>
   </section>
 
   <section class="contact" id="contact">
@@ -96,7 +98,7 @@
         <input type="tel" name="phone" placeholder="Enter your phone number*" aria-label="Phone number" required>
         <input type="email" name="email" placeholder="Enter your e-mail*" aria-label="Email" required>
         <textarea name="message" placeholder="Type your message" aria-label="Message"></textarea>
-        <button type="submit">Request a Quote</button>
+        <button type="submit">Submit</button>
       </form>
     </div>
   </section>

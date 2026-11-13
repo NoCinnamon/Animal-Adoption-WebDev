@@ -2,6 +2,38 @@ const API = location.hostname
   ? location.protocol + "//" + location.hostname + ":8000"
   : "http://127.0.0.1:8000";
 
+function showLoginStatus() {
+  const showLogin = document.querySelector("#login-status")
+  fetch(API + "/sessions", { credentials: "include" })
+    .then((response) => {
+      if (response.status != 200 ){
+        return null;
+      }
+      return response.json();
+    })
+    .then((user) => {
+      if (!user) {
+        return;
+      }
+      showLogin.replaceChildren();
+      greeding = document.createElement("span");
+      greeding.textContent = "Hello " + user.first_name;
+
+      const logout = document.createElement("button");
+      logout.type = "button";
+      logout.textContent = "Log out";
+      logout.addEventListener("click", () => {
+        fetch(API + "/sessions", { method: "DELETE", credentials: "include" })
+          .then(() => {
+            window.location.href = "index.html";
+          }
+        );
+      })
+      showLogin.append(greeding, logout);
+    })
+}
+showLoginStatus();
+
 function addPreview(list, animal) {
   const item = document.createElement("li");
 
@@ -50,8 +82,19 @@ function fillPreviews(animals) {
   available.slice(0, 3).forEach((animal) => addPreview(list, animal));
 }
 
-fetch(API + "/animals")
+fetch(API + "/animals", {credentials:"include"})
   .then((response) => response.json())
   .then(fillPreviews);
 
-
+const viewAll = document.querySelector("#view-all");
+  viewAll.addEventListener("click", (event) => {
+    event.preventDefault();
+    fetch(API + "/sessions", { credentials: "include" })
+      .then((response) => {
+        if (response.status !== 200) {
+          alert("Got to login first Baby!");
+          return;
+        }
+        window.location.href = "animals.html";
+      });
+  });
