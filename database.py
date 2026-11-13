@@ -32,7 +32,7 @@ class AnimalDatabase:
         con.commit()
         con.close()
 
-    def list_all(self):
+    def list_animals(self):
         con = self.connect()
         cur = con.cursor()
         cur.execute("SELECT * FROM animals") 
@@ -181,7 +181,16 @@ class ApplicationDatabase:
     def list_applications(self):
         con = self.connect()
         cur = con.cursor()
-        cur.execute("SELECT * FROM applications")
+        cur.execute("""
+            SELECT applications.id, applications.date,
+                users.first_name, users.last_name,
+                applications.phone,
+                animals.name,
+                applications.message
+            FROM applications
+            JOIN users ON users.id = applications.user_id
+            JOIN animals ON animals.id = applications.animal_id 
+        """)
         rows = cur.fetchall()
         con.close()
         return rows
@@ -301,12 +310,14 @@ if __name__ == "__main__":
     # db.delete(1)
     # db.replace(10, ("Rockey", "Dog", "Border Collie", "Male", 2, "Funny dog", "Available", "images/dog-Rockey"))
     
-    for animal in db.list_all():
+    for animal in db.list_animals():
         print(animal)
     print("\n")
+
     for user in UserDatabase().list_users():
         print(user)
     print("\n")
+
     for application in ApplicationDatabase().list_applications():
         print(application) 
 
