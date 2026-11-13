@@ -97,23 +97,25 @@ function addAnimal(list, animal) {
 
 }
 
-fetch(API + "/sessions", { credentials: "include" })
-  .then((response) => {
-    if (response.status !== 200) {
-      alert("Got to log in first Baby.");
-      window.location.href = "index.html";
-      return null;
-    }
-    return fetch(API + "/animals").then((response) => response.json());
-  })
+fetch(API + "/animals")
+  .then((response) => response.json())
   .then((animals) => {
-    if (!animals) {
-      return;
-    }
     const list = document.querySelector("#animal-list");
     animals.forEach((animal) => addAnimal(list, animal));
   });
 
+  fetch(API + "/sessions", { credentials: "include" })
+  .then((response) => {
+    if (response.status !== 200) {
+      return null;
+    }
+    return response.json();
+  })
+  .then((user) => {
+    if (user && user.role === "worker") {
+      document.querySelector("#animal-form").hidden = false;
+    }
+  });
 
   let queuedImagesArray = [],
   editingId = null,                                     // editingId = null => Adding; when edit is not null => Editing
@@ -239,10 +241,25 @@ function addNewAnimal(e) {
     });
 }
 document.querySelector("#animal-form").addEventListener("submit", addNewAnimal);
-document.querySelector(".add-button").addEventListener("click", () => {
+document.querySelector(".add-button").addEventListener("click", (event) => {
+  event.preventDefault();
+  fetch(API + "/sessions", { credentials: "include" })
+  .then((response) => {
+    if (response.status !== 200) {
+      return null;
+    } 
+    return response.json();
+  })
+  .then((user) => {
+    if (!user || user.role !== "worker") {
+      alert("You do not have permission to add animal.");
+      return;
+    }
   editingId = null;
   editingImage = "";
   queuedImagesArray = [];
   displayQueuedImages();
   document.querySelector("#animal-form").reset();
+  document.querySelector("#animal-form").scrollIntoView();
+  });
 });
