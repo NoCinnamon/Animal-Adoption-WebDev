@@ -169,7 +169,7 @@ class ApplicationDatabase:
     def create(self, application):
         con = self.connect()
         cur = con.cursor()
-        cur.execute(
+        cur.execute(    
             "INSERT INTO applications (user_id, animal_id, phone, message) VALUES (?, ?, ?, ?)",
             application,
         )
@@ -185,7 +185,7 @@ class ApplicationDatabase:
             SELECT applications.id, applications.date,
                 users.first_name, users.last_name,
                 applications.phone,
-                animals.name,
+                applications.animal_id, animals.name,
                 applications.message
             FROM applications
             JOIN users ON users.id = applications.user_id
@@ -198,7 +198,17 @@ class ApplicationDatabase:
     def list_by_user(self, user_id):
         con = self.connect()
         cur = con.cursor()
-        cur.execute("SELECT * FROM applications WHERE user_id = ?", (user_id,))
+        cur.execute("""
+            SELECT applications.id, applications.date,
+                users.first_name, users.last_name,
+                applications.phone,
+                applications.animal_id, animals.name,
+                applications.message
+            FROM applications
+            JOIN users ON users.id = applications.user_id
+            JOIN animals ON animals.id = applications.animal_id
+            WHERE applications.user_id = ?
+        """, (user_id,))
         rows = cur.fetchall()
         con.close()
         return rows

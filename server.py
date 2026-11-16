@@ -6,23 +6,27 @@ import os
 import re
 import bcrypt
 import secrets
-from database import AnimalDatabase, UserDatabase, ApplicationDatabse
+from database import AnimalDatabase, UserDatabase, ApplicationDatabase
 
 db = AnimalDatabase()
 user_db = UserDatabase()
 sessions = {}
-application_db = ApplicationDatabse()
+application_db = ApplicationDatabase()
 
-COLUMNS = ("id", "name", "species", "breed", "gender", "age", "description", "status", "image")
+ANIMAL_COLUMNS = ("id", "name", "species", "breed", "gender", "age", "description", "status", "image")
 USER_COLUMNS = ("id", "first_name", "last_name", "email", "password_hash", "role")
+APPLICATION_COLUMNS = ("id", "date", "first_name", "last_name", "phone", "animal_id", "animal_name", "message")
 
 def row_to_obj(row):
-    return dict(zip(COLUMNS, row))
+    return dict(zip(ANIMAL_COLUMNS, row))
 
 def user_to_obj(row):
     user = dict(zip(USER_COLUMNS, row))
     del user["password_hash"]
     return user
+
+def application_to_obj(row):
+    return dict(zip(APPLICATION_COLUMNS, row))
 
 def current_user(handler):
     cookie = handler.headers.get("Cookie")
@@ -143,10 +147,6 @@ def save_uploaded_files(content_type, raw):
 
 class Request_Handler(BaseHTTPRequestHandler):
     def do_GET(self):                                               # list/retrive
-        # if parse == ["", "animals"]:
-        #     if not require_login(self):
-        #         return
-        #     animals = []
 
         if self.path == "/sessions":
             user = current_user(self)
@@ -169,9 +169,24 @@ class Request_Handler(BaseHTTPRequestHandler):
 
         parse = self.path.split("/")
 
+        if parse == ["", "applications"]:
+            if not require_login(self):
+                return
+            user = current_user(self)
+            applications = []
+            for row in application_db.list_by_user(user["id"]):
+                applications.append(application_to_obj(row))
+            body = json.dumps(applications).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            allow_cors(self)
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         if parse == ["", "animals"]:
             animals = []
-            for row in db.list_all():
+            for row in db.list_animals():
                 animals.append(row_to_obj(row))
             body = json.dumps(animals).encode()
             self.send_response(200)
@@ -210,8 +225,30 @@ class Request_Handler(BaseHTTPRequestHandler):
         allow_cors(self)
         self.end_headers()
         self.wfile.write(body)
-        
+
     def do_POST(self):                                                     # Create
+
+        if self.path == "/applications":
+            if not require_login(self):
+                return
+            user = current_user(self)
+            length = int(self.headers["Content-Length"])
+            raw = self.rfile.read(length)
+            data = json.loads(raw)
+            application = (
+                user["id"],
+                int(data["animal_id"]),
+                data["phone"],
+                data["message"],
+            )
+            new_id = application_db.create(application)
+            body = json.dumps({"id": new_id}).encode()
+            self.send_response(201)
+            self.send_header("Content-Type", "application/json")
+            allow_cors(self)
+            self.end_headers()
+            self.wfile.write(body)
+            return
 
         if self.path == "/upload":
             if not require_worker(self):

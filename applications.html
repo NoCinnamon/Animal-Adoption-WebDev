@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <title>Applications</title>
+</head>
+<body class="application-page">
+  <a class="back-home" href="index.html">Back</a>
+  <h1>Your applications</h1>
+<p id="login-required">You have to log in first.</p>
+<ul id="application-list" hidden></ul>
+<form id="application-form" hidden>
+  <label>
+    Name
+    <input name="user_name" readonly>
+  </label>
+  <label>
+    Animal
+    <select name="animal_id" required></select>
+  </label>
+  <label>
+    Phone
+    <input name="phone" required>
+  </label>
+  <label>
+    Message
+    <textarea name="message" required></textarea>
+  </label>
+  <button type="submit">Submit</button>
+</form>
+<script src="applications.js"></script>
+</body>
+</html>

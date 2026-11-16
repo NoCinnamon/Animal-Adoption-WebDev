@@ -4,6 +4,7 @@ const API = location.hostname
 
 function showLoginStatus() {
   const showLogin = document.querySelector("#login-status")
+
   fetch(API + "/sessions", { credentials: "include" })
     .then((response) => {
       if (response.status != 200 ){
@@ -29,7 +30,10 @@ function showLoginStatus() {
           }
         );
       })
-      showLogin.append(greeding, logout);
+      const applications = document.createElement("a");
+      applications.href = "applications.html";
+      applications.textContent = "Applications";
+      showLogin.append(greeding, applications, logout);
     })
 }
 showLoginStatus();
@@ -85,16 +89,3 @@ function fillPreviews(animals) {
 fetch(API + "/animals", {credentials:"include"})
   .then((response) => response.json())
   .then(fillPreviews);
-
-const viewAll = document.querySelector("#view-all");
-  viewAll.addEventListener("click", (event) => {
-    event.preventDefault();
-    fetch(API + "/sessions", { credentials: "include" })
-      .then((response) => {
-        if (response.status !== 200) {
-          alert("Got to login first Baby!");
-          return;
-        }
-        window.location.href = "animals.html";
-      });
-  });

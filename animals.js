@@ -23,12 +23,21 @@ function addAnimal(list, animal) {
   meta.className = "animal-meta";
   meta.textContent = animal.species + " · " + animal.breed + " · " + animal.gender + " · " + animal.age;
 
+  const statusRow = document.createElement("div");
+  statusRow.className = "animal-status-row";
+
   const status = document.createElement("p");
   status.className = "animal-status";
   if (animal.status === "Available") {
     status.classList.add("is-available");
   }
   status.textContent = animal.status;
+
+  const adopt = document.createElement("a");
+  adopt.className = "adopt-button";
+  adopt.href = "applications.html?animal_id=" + animal.id;
+  adopt.textContent = "Adopt me";
+  statusRow.append(status, adopt);
 
   const edit = document.createElement("a")
   edit.className = "edit-button";
@@ -82,7 +91,7 @@ function addAnimal(list, animal) {
     }
   });
 
-  info.append(name, meta, status);                
+  info.append(name, meta, statusRow);
   if (animal.description) {
     const description = document.createElement("p");
     description.className = "animal-description";
