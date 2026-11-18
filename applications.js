@@ -26,10 +26,45 @@ function loadAnimals() {
 
 function addApplication(list, application) {
   const item = document.createElement("li");
-  item.textContent =
+  const summary = document.createElement("button");
+  summary.type = "button";
+  summary.className = "application-summary";
+  summary.textContent =
     application.date + " " +
     application.first_name + " " + application.last_name +
     " applied for " + application.animal_id + " — " + application.animal_name;
+
+  const detail = document.createElement("dl");
+  detail.className = "application-detail";
+  detail.hidden = true;
+  const fields = [
+    ["Date", application.date],
+    ["Name", application.first_name + " " + application.last_name],
+    ["Phone", application.phone],
+    ["Animal", application.animal_id + " — " + application.animal_name],
+    ["Message", application.message],
+  ];
+  fields.forEach(([label, value]) => {
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const description = document.createElement("dd");
+    description.textContent = value;
+    detail.append(term, description);
+  });
+
+  summary.addEventListener("click", () => {
+    const willOpen = detail.hidden;
+    list.querySelectorAll(".application-detail").forEach((node) => {
+      node.hidden = true;
+    });
+    list.querySelectorAll(".application-summary").forEach((node) => {
+      node.classList.remove("is-open");
+    });
+    detail.hidden = !willOpen;
+    summary.classList.toggle("is-open", willOpen);
+  });
+
+  item.append(summary, detail);
   list.appendChild(item);
 }
 

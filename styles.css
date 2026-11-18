@@ -1022,11 +1022,50 @@ body {
 }
 
 #application-list li {
-  padding: 18px 22px;
   border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(28, 28, 28, 0.06);
+  overflow: hidden;
+}
+
+.application-summary {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 18px 22px;
+  color: inherit;
+  font: inherit;
   font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.application-summary:hover,
+.application-summary.is-open {
+  background: #fffdf3;
+}
+
+.application-detail {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px 16px;
+  margin: 0;
+  padding: 4px 22px 20px;
+}
+
+.application-detail[hidden] {
+  display: none;
+}
+
+.application-detail dt {
+  color: #8d8d8d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.application-detail dd {
+  margin: 0;
+  font-weight: 500;
 }
 
 #application-form {
