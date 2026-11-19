@@ -89,3 +89,23 @@ function fillPreviews(animals) {
 fetch(API + "/animals", {credentials:"include"})
   .then((response) => response.json())
   .then(fillPreviews);
+
+document.querySelector(".contact-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const form = event.target;
+  fetch(API + "/contact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: form.name.value,
+      phone: form.phone.value,
+      email: form.email.value,
+      message: form.message.value,
+    }),
+  }).then((response) => {
+    if (response.status === 200) {
+      form.reset();
+      alert("Message sent.");
+    }
+  });
+});

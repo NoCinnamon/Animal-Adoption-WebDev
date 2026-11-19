@@ -6,7 +6,9 @@ import os
 import re
 import bcrypt
 import secrets
+import smtplib
 from database import AnimalDatabase, UserDatabase, ApplicationDatabase
+from email.message import EmailMessage
 
 db = AnimalDatabase()
 user_db = UserDatabase()
@@ -227,7 +229,32 @@ class Request_Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self):                                                     # Create
-
+        if self.path == "/contact":
+            length = int(self.headers["Content-Length"])
+            data = json.loads(self.rfile.read(length))
+            message = EmailMessage()
+            message["Subject"] = "New message from the adoption site"
+            message["From"] = os.environ["CONTACT_EMAIL"]
+            message["To"] = os.environ["CONTACT_EMAIL"]
+            message["Reply-To"] = data["email"]
+            message.set_content(
+                data["name"] + "\n" +
+                data["phone"] + "\n" +
+                data["email"] + "\n\n" +
+                data["message"]
+            )
+            with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+                smtp.starttls()
+                smtp.login(os.environ["CONTACT_EMAIL"], os.environ["CONTACT_PASSWORD"])
+                smtp.send_message(message)
+            body = json.dumps({"ok": True}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            allow_cors(self)
+            self.end_headers()
+            self.wfile.write(body)
+            return
+            
         if self.path == "/applications":
             if not require_login(self):
                 return
