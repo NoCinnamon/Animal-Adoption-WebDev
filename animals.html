@@ -18,6 +18,25 @@
     </nav>
   </div>
 
+  <form class="animal-filters">
+    <select name="species">
+      <option value="">(any species)</option>
+      <option>Dog</option>
+      <option>Cat</option>
+      <option>Bunny</option>
+    </select>
+    <select name="age">
+      <option value="">(any age)</option>
+      <option value="young">Under 2</option>
+      <option value="adult">2 or older</option>
+    </select>
+    <select name="gender">
+      <option value="">(any gender)</option>
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+  </form>
+  
   <ul id="animal-list"></ul>
 
   <form id="animal-form" hidden>

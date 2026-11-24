@@ -3,6 +3,30 @@ const API = location.hostname
   : "http://127.0.0.1:8000";
 
 let isWorker = false;
+const filters = document.querySelector(".animal-filters");
+let allAnimals = [];
+
+function showAnimals() {
+  const list = document.querySelector("#animal-list");
+  list.replaceChildren();
+  allAnimals
+    .filter((animal) => {
+      if (filters.species.value && animal.species !== filters.species.value) {
+        return false;
+      }
+      if (filters.gender.value && animal.gender !== filters.gender.value) {
+        return false;
+      }
+      if (filters.age.value === "young" && Number(animal.age) >= 2) {
+        return false;
+      }
+      if (filters.age.value === "adult" && Number(animal.age) < 2) {
+        return false;
+      }
+      return true;
+    })
+    .forEach((animal) => addAnimal(list, animal));
+}
 
 fetch(API + "/sessions", { credentials: "include" })
   .then((response) => {
@@ -21,9 +45,11 @@ fetch(API + "/sessions", { credentials: "include" })
   })
   .then((response) => response.json())
   .then((animals) => {
-    const list = document.querySelector("#animal-list");
-    animals.forEach((animal) => addAnimal(list, animal));
+    allAnimals = animals;
+    showAnimals();
   });
+
+filters.addEventListener("change", showAnimals);
   
 function addAnimal(list, animal) {
   const item = document.createElement("li");
