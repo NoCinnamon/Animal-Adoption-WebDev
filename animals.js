@@ -2,6 +2,29 @@ const API = location.hostname
   ? location.protocol + "//" + location.hostname + ":8000"
   : "http://127.0.0.1:8000";
 
+let isWorker = false;
+
+fetch(API + "/sessions", { credentials: "include" })
+  .then((response) => {
+    if (response.status !== 200) {
+      return null;
+    }
+    return response.json();
+  })
+  .then((user) => {
+    if (user && user.role === "worker") {
+      isWorker = true;
+      document.querySelector("#animal-form").hidden = false;
+      document.querySelector(".add-button").hidden = false;
+    }
+    return fetch(API + "/animals");
+  })
+  .then((response) => response.json())
+  .then((animals) => {
+    const list = document.querySelector("#animal-list");
+    animals.forEach((animal) => addAnimal(list, animal));
+  });
+  
 function addAnimal(list, animal) {
   const item = document.createElement("li");
   item.className = "animal-row";
@@ -101,32 +124,14 @@ function addAnimal(list, animal) {
 
   item.appendChild(info);
   list.appendChild(item);
-  info.appendChild(edit);
-  info.appendChild(remove)
+  if (isWorker) {
+    info.appendChild(edit);
+    info.appendChild(remove);
+  }
 
 }
 
-fetch(API + "/animals")
-  .then((response) => response.json())
-  .then((animals) => {
-    const list = document.querySelector("#animal-list");
-    animals.forEach((animal) => addAnimal(list, animal));
-  });
-
-  fetch(API + "/sessions", { credentials: "include" })
-  .then((response) => {
-    if (response.status !== 200) {
-      return null;
-    }
-    return response.json();
-  })
-  .then((user) => {
-    if (user && user.role === "worker") {
-      document.querySelector("#animal-form").hidden = false;
-    }
-  });
-
-  let queuedImagesArray = [],
+let queuedImagesArray = [],
   editingId = null,                                     // editingId = null => Adding; when edit is not null => Editing
   editingImage = "",
   queuedDiv = document.querySelector(".queued-form"),
