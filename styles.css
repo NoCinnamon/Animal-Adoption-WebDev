@@ -615,6 +615,12 @@ body {
   width: 88px;
   height: 88px;
   flex-basis: 88px;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.footer-left .logo img {
+  object-fit: contain;
 }
 
 .footer-left .brand-name {

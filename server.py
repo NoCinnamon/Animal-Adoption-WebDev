@@ -43,13 +43,16 @@ def current_user(handler):
         return None
     return sessions.get(session_id)
 
+ALLOWED_ORIGINS = {
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+}
+
 def allow_cors(handler):
     origin = handler.headers.get("Origin")
-    if origin:
+    if origin in ALLOWED_ORIGINS:
         handler.send_header("Access-Control-Allow-Origin", origin)
         handler.send_header("Access-Control-Allow-Credentials", "true")
-    else:
-        handler.send_header("Access-Control-Allow-Origin", "*")
 
 def serve_static(handler):
     rel = handler.path.split("?", 1)[0]
