@@ -450,13 +450,10 @@ class Request_Handler(BaseHTTPRequestHandler):
                     session_id = value
             if session_id is not None:
                 sessions.pop(session_id, None)
-            body = json.dumps({"ok": True}).encode()
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
+            self.send_response(204)
             allow_cors(self)
             self.send_header("Set-Cookie", "session_id=; HttpOnly; Path=/; Max-Age=0")
             self.end_headers()
-            self.wfile.write(body)
             return
 
         parse = self.path.split("/")                                       # after parsing: [ "", "animals",3(id)]
